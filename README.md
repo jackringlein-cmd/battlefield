@@ -20,6 +20,10 @@ Choose your fighter and Easy, Medium, or Hard difficulty. The computer chooses a
 
 The car fires a continuous laser while the mouse button is held. It has three seconds of charge and locks for a two-second recharge when empty. Releasing early stops damage immediately and lets charge recover. The beam hits the first obstacle or fighter in its path, regardless of where the crosshair is placed. Ricochet reflects from platform faces. Split missiles create two smaller homing missiles on contact, even without the Homing upgrade.
 
+Two city ramps let cars drive up and launch toward the center using speed. No Jump upgrade is needed for ramps; pressing W still requires it. Start a new match to use the updated map if continuing an older save.
+
+The laser's length is limited by the cursor. Its small glowing end circle deals 50% extra damage, and obstacles stop it sooner. The person's spit is blue.
+
 The car, jet, and mech start at about 31 damage per second before accuracy, cover, and travel time. The person intentionally starts weaker. Balance is an early draft and needs player feedback.
 
 ## Art

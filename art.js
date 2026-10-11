@@ -44,7 +44,7 @@ function drawStickman(c,f,t){
  inkLine(c,[[-1,-12],[-12,-1],[-18,5-step]],4);
  inkLine(c,[[0,-12],[11,-2],[f.action>0?46:20,f.action>0?-8:3+step]],4);
  circle(c,0,-32,13,'#fffbed','#090e13',3.5);
- if(f.muzzle>0){circle(c,12,-27,4,'#87eb56','#090e13',2);inkLine(c,[[18,-29],[25,-32]],2,'#4baf42');}
+ if(f.muzzle>0){circle(c,12,-27,4,'#279bff','#090e13',2);inkLine(c,[[18,-29],[25,-32]],2,'#83dbff');}
  if(f.action>0)inkLine(c,[[45,-10],[50,-8],[46,-5]],3);
  c.restore();
 }

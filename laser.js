@@ -7,7 +7,8 @@ function circleContact(x,y,dx,dy,cx,cy,r){
 }
 function traceLaser(f,angle){
  const enemy=fighters[1-f.team],segments=[];
- let x=f.x,y=f.y,dx=Math.cos(angle),dy=Math.sin(angle),range=1600*f.shotSpeed/TYPES.car.shotSpeed;
+ const aimDistance=f.team?(f.laserAimDistance??Math.hypot(enemy.x-f.x,enemy.y-f.y)):Math.hypot(mouse.x-f.x,mouse.y-f.y);
+ let x=f.x,y=f.y,dx=Math.cos(angle),dy=Math.sin(angle),range=Math.min(aimDistance,1600*f.shotSpeed/TYPES.car.shotSpeed);
  for(let bounce=0;bounce<=f.bounces&&range>0;bounce++){
   let length=range,nx=0,ny=0,hitBox=null,hitEnemy=false;
   for(const edge of [{distance:dx>0?(W-10-x)/dx:dx<0?(10-x)/dx:Infinity,nx:-Math.sign(dx),ny:0},{distance:dy>0?(FLOOR-y)/dy:dy<0?(20-y)/dy:Infinity,nx:0,ny:-Math.sign(dy)}]){
@@ -20,8 +21,9 @@ function traceLaser(f,angle){
   segments.push({x:x+dx*startOffset,y:y+dy*startOffset,endX,endY,hitBox,hitEnemy});
   if(hitEnemy||(!nx&&!ny))break;
   range-=length;x=endX+nx*.2;y=endY+ny*.2;
-  if(nx)dx=-dx;if(ny)dy=-dy;
+  const dot=dx*nx+dy*ny;dx-=2*dot*nx;dy-=2*dot*ny;
  }
+ if(segments.length)segments[segments.length-1].tip=true;
  return segments;
 }
 function updateLaser(f,held,dt){
@@ -44,6 +46,14 @@ function updateLaser(f,held,dt){
   for(const segment of beam){
    if(segment.hitEnemy){damage(enemy,amount,f);enemy.vx+=Math.cos(f.angle)*f.knock*duration;}
    if(segment.hitBox){segment.hitBox.hp-=amount;if(segment.hitBox.hp<=0)burst(segment.endX,segment.endY,'#d69b52',18,160);}
+   if(segment.tip){
+    const radius=10+f.shotSize*.5;
+    // The bright focus point adds 50% damage; intact cover still blocks it.
+    const nearby=Math.hypot(enemy.x-segment.endX,enemy.y-segment.endY)<=enemy.r+radius;
+    const obstructed=blocks.some(box=>box.hp>0&&platformContact(segment.endX,segment.endY,enemy.x,enemy.y,0,box));
+    if(nearby&&!obstructed)damage(enemy,amount*.5,f);
+    if(segment.hitBox)segment.hitBox.hp-=amount*.5;
+   }
    if(spark&&(segment.hitEnemy||segment.hitBox)){
     burst(segment.endX,segment.endY,f.explosion?'#ff9645':'#28f4ef',f.explosion?20:5,f.explosion?220:80);
     if(f.explosion){
@@ -64,6 +74,11 @@ function drawLasers(c){
     c.strokeStyle=color;c.lineWidth=width;c.beginPath();c.moveTo(beam.x,beam.y);c.lineTo(beam.endX,beam.endY);c.stroke();
    }
    c.restore();
+   if(beam.tip){
+    const radius=10+f.shotSize*.5;
+    circle(c,beam.endX,beam.endY,radius+Math.sin(time*28)*1.3,'#45ffff','#112b34',2);
+    circle(c,beam.endX,beam.endY,radius*.55,'#ffffff',null);
+   }
   }
   const x=f.x-25,y=f.y+f.r+12;
   rect(c,x,y,50,6,'#fff3d2','#111920',2);

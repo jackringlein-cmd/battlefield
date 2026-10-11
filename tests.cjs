@@ -4,8 +4,17 @@ const context2d=new Proxy({}, {get:(_,key)=>key==='createLinearGradient'?()=>({a
 const elements=new Map();
 function element(){return {style:{},dataset:{},hidden:false,value:'medium',textContent:'',innerHTML:'',classList:{toggle(){}},setAttribute(){},addEventListener(){},appendChild(){},getContext:()=>context2d,querySelector:()=>element()};}
 const savedValues=new Map();const sandbox={console,Math,Set,localStorage:{getItem:k=>savedValues.get(k)||null,setItem:(k,v)=>savedValues.set(k,v),removeItem:k=>savedValues.delete(k)},document:{getElementById:id=>{if(!elements.has(id))elements.set(id,element());return elements.get(id);},createElement:element,querySelectorAll:()=>[]},window:{addEventListener(){}},requestAnimationFrame(){}};
-vm.createContext(sandbox);for(const file of ['art.js','laser.js','navigation.js','save.js','game.js'])vm.runInContext(fs.readFileSync(file,'utf8'),sandbox);
+vm.createContext(sandbox);for(const file of ['art.js','laser.js','navigation.js','save.js','ramps.js','game.js'])vm.runInContext(fs.readFileSync(file,'utf8'),sandbox);
 const run=code=>vm.runInContext(code,sandbox);
+run("blocks=cityRamps();var rampCar=makeFighter('car',0);rampCar.x=405;rampCar.y=FLOOR-rampCar.r;rampCar.ground=true;rampCar.vx=300;var climbed=false,launched=false;for(let i=0;i<90;i++){move(rampCar,1,0,false,1/60);if(rampCar.y<FLOOR-rampCar.r-50)climbed=true;if(rampCar.x>=600&&rampCar.vy<0&&!rampCar.ground)launched=true;}");
+assert.equal(run('climbed'),true,'Car drives up a ramp');assert.equal(run('launched'),true,'Speed launches car off peak');assert.equal(run('rampCar.canJump'),false,'Ramp launch does not grant Jump');
+run("var mirroredCar=makeFighter('car',1);mirroredCar.x=1035;mirroredCar.y=FLOOR-mirroredCar.r;mirroredCar.ground=true;mirroredCar.vx=-300;var mirrorLaunched=false;for(let i=0;i<90;i++){move(mirroredCar,-1,0,false,1/60);if(mirroredCar.x<=840&&mirroredCar.vy<0&&!mirroredCar.ground)mirrorLaunched=true;}");
+assert.equal(run('mirrorLaunched'),true,'Opposite ramp launches left');
+assert.equal(run('platformContact(435,650,470,650,2,blocks[0])'),null,'Shots pass through empty space above low end');
+assert.ok(run('platformContact(500,500,500,735,2,blocks[0])')!==null,'Shots hit actual ramp slope');
+run("var slopeHit=platformContact(500,500,500,735,2,blocks[0]);var slopeShot={x:500,y:735,vx:0,vy:500,r:2,damage:5,bounces:1,split:false,life:2,owner:rampCar};platformHit(slopeShot,500,500,[])");
+assert.ok(run('slopeShot.vy')<0,'Ricochet reflects upward from slope');assert.ok(Math.abs(run('slopeShot.vx'))>0,'Slope changes ricochet direction');
+console.log('Passed: two drivable ramps, launches without Jump, true slope collision, and slope ricochet.');
 run("var carTest=makeFighter('car',0); blocks=[]; carTest.y=FLOOR-carTest.r; carTest.ground=true; move(carTest,0,0,true,.016)");
 assert.equal(run('carTest.vy'),0,'Car cannot jump before upgrade');
 assert.equal(run("eligible(carTest).some(u=>u.id==='sticky')"),false,'Wall grip is locked');
@@ -39,6 +48,11 @@ assert.ok(run('walkRoute.some(p=>p.jump)'), 'Ground fighter plans a jump around 
 run("var navCar=makeFighter('car',1);navCar.x=330;navCar.y=FLOOR-navCar.r-1;navCar.ground=true;navigateAI(navCar,{x:900,y:navCar.y},.016)");
 assert.equal(run('navCar.canJump'),false,'Routing never grants car a free jump');
 console.log('Passed: continuous laser, release, depletion, recharge, cover with distant crosshair, random fighters, flying route, and ground jump route.');
+run("fighters=[makeFighter('car',0),makeFighter('jet',1)];var focusCar=fighters[0];focusCar.x=200;focusCar.y=300;fighters[1].x=1100;fighters[1].y=300;blocks=[];mouse.x=550;mouse.y=300;updateLaser(focusCar,true,.1)");
+assert.equal(run('focusCar.beams[0].endX'),550,'Beam ends at cursor, not beyond');assert.equal(run('focusCar.beams[0].tip'),true,'Beam endpoint has focus circle');assert.equal(run('fighters[1].hp'),110,'Enemy beyond cursor is not hit');
+run('focusCar.laserCharge=3;mouse.x=1200;updateLaser(focusCar,true,.1)');
+assert.ok(Math.abs(run('110-fighters[1].hp')-run('focusCar.damage/focusCar.rate*(5/3)*.1*1.5'))<.001,'Focus point deals 50 percent extra damage');
+run("var blueSpitter=makeFighter('person',0);blocks=[];bullets=[];shoot(blueSpitter)");assert.equal(run('bullets[0].color'),'#279bff','Normal spit is blue');
 run("fighters=[makeFighter('jet',0),makeFighter('jet',1)];blocks=[];bullets=[];mode='battle';mouse.down=false;keys.clear();fighters[0].x=200;fighters[0].y=200;fighters[0].split=true;fighters[1].x=1200;fighters[1].y=600;fighters[1].aiTimer=99;fighters[1].aiFire=false;shoot(fighters[0]);for(let n=0;n<20;n++)update(.016)");
 assert.equal(run('bullets.length'),1,'Missile stays whole in flight, beyond old split timer');
 run("var splitParent=bullets[0],children=[];impact(splitParent,fighters[1],children)");
